@@ -74,10 +74,10 @@ export function Header() {
     <>
       {/* Sticky Header */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        className={`sticky top-0 z-50 transition-all duration-300 ${
           isScrolled
             ? "bg-[#f9f8ff] shadow-[0px_19px_24px_0px_rgba(172,191,250,0.4)]"
-            : "bg-transparent"
+            : "bg-[#f9f8ff]"
         }`}
       >
         {/* Desktop Header */}
