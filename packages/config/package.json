@@ -1,0 +1,20 @@
+{
+  "name": "@testa/config",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    "./tailwind": "./tailwind.config.ts",
+    "./eslint": "./eslint.config.mjs",
+    "./typescript/base": "./tsconfig.base.json",
+    "./typescript/nextjs": "./tsconfig.nextjs.json",
+    "./postcss": "./postcss.config.mjs"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

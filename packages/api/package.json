@@ -1,0 +1,36 @@
+{
+  "name": "@testa/api",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./types": {
+      "types": "./src/generated/api.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "generate": "openapi-typescript $OPENAPI_SPEC_URL -o src/generated/api.d.ts",
+    "generate:local": "openapi-typescript ./openapi.yaml -o src/generated/api.d.ts",
+    "lint": "eslint src/",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.13.5"
+  },
+  "devDependencies": {
+    "@testa/config": "workspace:*",
+    "openapi-typescript": "^7.6.1",
+    "tsup": "^8.5.0",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "name": "@testa/help-center",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.tsx --format cjs,esm --dts --external react",
+    "dev": "tsup src/index.tsx --format cjs,esm --dts --external react --watch",
+    "lint": "eslint src/",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {
+    "@testa/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "@testa/config": "workspace:*",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "react": "^19.0.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5"
+  }
+}
