@@ -93,26 +93,27 @@ function BenefitItem({
   return (
     <button
       onClick={onClick}
-      className="flex gap-6 items-start w-full text-left cursor-pointer hover:opacity-90 transition-opacity"
+      className="flex flex-col gap-1 w-full text-left cursor-pointer hover:opacity-90 transition-opacity"
     >
-      {/* Vertical indicator bar */}
-      <div className="relative w-2 h-[45px] rounded-full overflow-hidden shrink-0">
-        <div className="absolute inset-0 bg-[#2f2c46]" />
-        {isSelected && (
-          <div className="absolute top-0 left-0 w-full h-[25px] bg-[#f9f8ff] rounded-full" />
-        )}
-      </div>
-      {/* Content */}
-      <div className="flex flex-col gap-1 pt-2 flex-1">
+      {/* Title row with vertically centered indicator */}
+      <div className="flex gap-4 items-center">
+        {/* Vertical indicator bar */}
+        <div className="relative w-2 h-[45px] rounded-full overflow-hidden shrink-0">
+          <div className="absolute inset-0 bg-[#2f2c46]" />
+          {isSelected && (
+            <div className="absolute top-0 left-0 w-full h-[25px] bg-[#f9f8ff] rounded-full" />
+          )}
+        </div>
         <p className="font-bold text-[20px] text-[#f9f8ff] leading-normal">
           {title}
         </p>
-        {isSelected && (
-          <p className="text-[14px] text-[#f9f8ff] leading-normal font-normal">
-            {description}
-          </p>
-        )}
       </div>
+      {/* Description - only shown when selected, indented to align with title */}
+      {isSelected && (
+        <p className="text-[14px] text-[#f9f8ff] leading-[20px] font-normal pl-6 min-h-[40px]">
+          {description}
+        </p>
+      )}
     </button>
   );
 }
@@ -212,7 +213,7 @@ export function Benefits() {
             />
 
             {/* Content */}
-            <div className="relative z-10 flex flex-col gap-10">
+            <div className="relative z-10 flex flex-col gap-10 pb-10">
               {/* Title */}
               <h2 className="text-[44px] font-semibold text-[#f9f8ff] text-center leading-[50px] max-w-[1032px] mx-auto">
                 With{" "}
@@ -223,7 +224,7 @@ export function Benefits() {
               </h2>
 
               {/* Desktop: Two columns layout */}
-              <div className="flex gap-6 items-center">
+              <div className="flex gap-6 items-start">
                 {/* Left: Slide image */}
                 <img
                   src={benefits[selectedIndex].image}
@@ -232,7 +233,7 @@ export function Benefits() {
                 />
 
                 {/* Right: Benefits list */}
-                <div className="flex flex-col gap-6 w-[416px]">
+                <div className="flex flex-col gap-5 w-[416px]">
                   {benefits.map((benefit, index) => (
                     <BenefitItem
                       key={index}
