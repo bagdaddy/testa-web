@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback } from "react";
 
 // Session tiers with placeholder prices (to be filled in later)
+// value: -1 means "Contact Sales" tier
 const sessionTiers = [
   { sessions: "50K", value: 50000 },
   { sessions: "100K", value: 100000 },
   { sessions: "250K", value: 250000 },
   { sessions: "500K", value: 500000 },
   { sessions: "1M", value: 1000000 },
+  { sessions: "1M+", value: -1 },
 ];
 
-// Placeholder pricing - will be updated later
+// Pricing based on session tiers
 const pricing: Record<
   number,
   {
@@ -20,24 +22,24 @@ const pricing: Record<
   }
 > = {
   50000: {
-    core: { original: 0, current: 0 },
-    advanced: { original: 0, current: 0 },
+    core: { original: 99, current: 79 },
+    advanced: { original: 499, current: 399 },
   },
   100000: {
-    core: { original: 0, current: 0 },
-    advanced: { original: 0, current: 0 },
+    core: { original: 199, current: 159 },
+    advanced: { original: 899, current: 699 },
   },
   250000: {
-    core: { original: 0, current: 0 },
-    advanced: { original: 0, current: 0 },
+    core: { original: 499, current: 399 },
+    advanced: { original: 1249, current: 998 },
   },
   500000: {
-    core: { original: 0, current: 0 },
-    advanced: { original: 0, current: 0 },
+    core: { original: 999, current: 799 },
+    advanced: { original: 2499, current: 1995 },
   },
   1000000: {
-    core: { original: 0, current: 0 },
-    advanced: { original: 0, current: 0 },
+    core: { original: 1999, current: 1599 },
+    advanced: { original: 4990, current: 3990 },
   },
 };
 
@@ -99,10 +101,27 @@ function FeatureItem({ children }: { children: React.ReactNode }) {
 function PriceDisplay({
   original,
   current,
+  isContactSales,
 }: {
   original: number;
   current: number;
+  isContactSales?: boolean;
 }) {
+  if (isContactSales) {
+    return (
+      <div className="flex flex-col gap-2">
+        <p className="text-[#93919d] text-[18px] font-medium leading-[20px]">
+          Custom pricing
+        </p>
+        <div className="flex items-end text-[#221f38]">
+          <span className="text-[30px] font-bold leading-[36px]">
+            Contact Sales
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-2">
       <p className="text-[#93919d] text-[18px] font-medium line-through leading-[20px]">
@@ -121,12 +140,14 @@ function PriceDisplay({
 
 function CoreCard({
   currentPricing,
+  isContactSales,
 }: {
-  currentPricing: { original: number; current: number };
+  currentPricing: { original: number; current: number } | null;
+  isContactSales?: boolean;
 }) {
   return (
     <div
-      className="flex-1 flex flex-col rounded-[16px] pb-px"
+      className="flex-1 flex flex-col xl:grid xl:grid-rows-subgrid xl:row-span-3 rounded-[16px] pb-px"
       style={{
         backgroundImage:
           "linear-gradient(-12deg, rgba(88, 100, 255, 0.24) 3%, rgba(145, 153, 255, 0.1) 98%)",
@@ -142,23 +163,24 @@ function CoreCard({
             Core
           </h3>
           <PriceDisplay
-            original={currentPricing.original}
-            current={currentPricing.current}
+            original={currentPricing?.original ?? 0}
+            current={currentPricing?.current ?? 0}
+            isContactSales={isContactSales}
           />
         </div>
       </div>
 
       {/* Who's it for */}
-      <div className="border border-[#bfc4ff] border-t-0 px-6 py-6">
-        <div className="flex flex-col gap-10">
-          <div className="flex flex-col gap-2">
+      <div className="border border-[#bfc4ff] border-t-0 px-6 py-6 flex flex-col">
+        <div className="flex flex-col justify-between flex-1 gap-6">
+          <div className="flex flex-col gap-3">
             <p
               className="text-[16px] font-bold text-[#221f38] leading-[20px]"
               style={{ fontFamily: "var(--font-dm-sans)" }}
             >
               Who&apos;s it for:
             </p>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               {coreWhosItFor.map((item, index) => (
                 <FeatureItem key={index}>{item}</FeatureItem>
               ))}
@@ -166,116 +188,23 @@ function CoreCard({
           </div>
 
           {/* Buttons */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 mt-auto">
             <button
               onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
               className="w-full h-[56px] bg-[#110b36] text-[#f9f8ff] font-bold text-[20px] rounded-full hover:bg-[#1a1250] transition-colors"
             >
               Contact Us
             </button>
-            <div className="flex flex-col gap-4 items-center">
-              <button className="w-full h-[56px] border-2 border-[#110b36] text-[#110b36] font-bold text-[20px] rounded-full hover:bg-[#110b36] hover:text-[#f9f8ff] transition-colors">
-                Try for FREE
-              </button>
-              <p className="text-[14px] text-[#5864ff] text-center">
-                First 30 days free
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Includes */}
-      <div className="border border-[#bfc4ff] border-t-0 rounded-b-[16px] px-6 pt-6 pb-12 flex-1">
-        <div className="flex flex-col gap-2">
-          <p
-            className="text-[16px] font-bold text-[#221f38] leading-[20px]"
-            style={{ fontFamily: "var(--font-dm-sans)" }}
-          >
-            Includes:
-          </p>
-          <div className="flex flex-col gap-2">
-            {coreIncludes.map((item, index) => (
-              <FeatureItem key={index}>
-                {item.bold ? (
-                  <span className="font-semibold">{item.text}</span>
-                ) : (
-                  <>
-                    <span>{item.text}</span>
-                    <span className="font-semibold">{item.boldPart}</span>
-                  </>
-                )}
-              </FeatureItem>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AdvancedCard({
-  currentPricing,
-}: {
-  currentPricing: { original: number; current: number };
-}) {
-  return (
-    <div
-      className="flex-1 flex flex-col rounded-[16px] pb-px"
-      style={{
-        backgroundImage:
-          "linear-gradient(173deg, rgba(172, 224, 243, 0.1) 20%, rgba(63, 77, 255, 0.3) 103%)",
-      }}
-    >
-      {/* Header */}
-      <div className="border border-[#bfc4ff] rounded-t-[16px] px-6 pt-12 pb-6">
-        <div className="flex flex-col gap-4">
-          <h3
-            className="text-[30px] font-bold text-[#5864ff] leading-[30px]"
-            style={{ fontFamily: "var(--font-dm-sans)" }}
-          >
-            Advanced
-          </h3>
-          <PriceDisplay
-            original={currentPricing.original}
-            current={currentPricing.current}
-          />
-        </div>
-      </div>
-
-      {/* Who's it for */}
-      <div className="border border-[#bfc4ff] border-t-0 px-6 py-6">
-        <div className="flex flex-col gap-10">
-          <div className="flex flex-col gap-2">
-            <p
-              className="text-[16px] font-bold text-[#221f38] leading-[20px]"
-              style={{ fontFamily: "var(--font-dm-sans)" }}
-            >
-              Who&apos;s it for
-            </p>
-            <div className="flex flex-col gap-2">
-              {advancedWhosItFor.map((item, index) => (
-                <FeatureItem key={index}>{item}</FeatureItem>
-              ))}
-            </div>
-          </div>
-
-          {/* Buttons */}
-          <div className="flex flex-col gap-4">
-            <button
-              onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
-              className="w-full h-[56px] bg-[#110b36] text-[#f9f8ff] font-bold text-[20px] rounded-full hover:bg-[#1a1250] transition-colors"
-            >
-              Contact Us
-            </button>
-            <div className="flex flex-col gap-4 items-center">
-              <button className="w-full h-[56px] border-2 border-[#110b36] text-[#110b36] font-bold text-[20px] rounded-full hover:bg-[#110b36] hover:text-[#f9f8ff] transition-colors">
-                Try for FREE
-              </button>
-              <p className="text-[14px] text-[#5864ff] text-center">
-                First 30 days free
-              </p>
-            </div>
+            {!isContactSales && (
+              <div className="flex flex-col gap-4 items-center">
+                <button className="w-full h-[56px] border-2 border-[#110b36] text-[#110b36] font-bold text-[20px] rounded-full hover:bg-[#110b36] hover:text-[#f9f8ff] transition-colors">
+                  Try for FREE
+                </button>
+                <p className="text-[14px] text-[#5864ff] text-center">
+                  First 30 days free
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -309,10 +238,111 @@ function AdvancedCard({
   );
 }
 
+function AdvancedCard({
+  currentPricing,
+  isContactSales,
+}: {
+  currentPricing: { original: number; current: number } | null;
+  isContactSales?: boolean;
+}) {
+  return (
+    <div
+      className="flex-1 flex flex-col xl:grid xl:grid-rows-subgrid xl:row-span-3 rounded-[16px] pb-px"
+      style={{
+        backgroundImage:
+          "linear-gradient(173deg, rgba(172, 224, 243, 0.1) 20%, rgba(63, 77, 255, 0.3) 103%)",
+      }}
+    >
+      {/* Header */}
+      <div className="border border-[#bfc4ff] rounded-t-[16px] px-6 pt-12 pb-6">
+        <div className="flex flex-col gap-4">
+          <h3
+            className="text-[30px] font-bold text-[#5864ff] leading-[30px]"
+            style={{ fontFamily: "var(--font-dm-sans)" }}
+          >
+            Advanced
+          </h3>
+          <PriceDisplay
+            original={currentPricing?.original ?? 0}
+            current={currentPricing?.current ?? 0}
+            isContactSales={isContactSales}
+          />
+        </div>
+      </div>
+
+      {/* Who's it for */}
+      <div className="border border-[#bfc4ff] border-t-0 px-6 py-6 flex flex-col">
+        <div className="flex flex-col justify-between flex-1 gap-6">
+          <div className="flex flex-col gap-3">
+            <p
+              className="text-[16px] font-bold text-[#221f38] leading-[20px]"
+              style={{ fontFamily: "var(--font-dm-sans)" }}
+            >
+              Who&apos;s it for:
+            </p>
+            <div className="flex flex-col gap-3">
+              {advancedWhosItFor.map((item, index) => (
+                <FeatureItem key={index}>{item}</FeatureItem>
+              ))}
+            </div>
+          </div>
+
+          {/* Buttons */}
+          <div className="flex flex-col gap-4 mt-auto">
+            <button
+              onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+              className="w-full h-[56px] bg-[#110b36] text-[#f9f8ff] font-bold text-[20px] rounded-full hover:bg-[#1a1250] transition-colors"
+            >
+              Contact Us
+            </button>
+            {!isContactSales && (
+              <div className="flex flex-col gap-4 items-center">
+                <button className="w-full h-[56px] border-2 border-[#110b36] text-[#110b36] font-bold text-[20px] rounded-full hover:bg-[#110b36] hover:text-[#f9f8ff] transition-colors">
+                  Try for FREE
+                </button>
+                <p className="text-[14px] text-[#5864ff] text-center">
+                  First 30 days free
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Includes */}
+      <div className="border border-[#bfc4ff] border-t-0 rounded-b-[16px] px-6 pt-6 pb-12 flex-1">
+        <div className="flex flex-col gap-2">
+          <p
+            className="text-[16px] font-bold text-[#221f38] leading-[20px]"
+            style={{ fontFamily: "var(--font-dm-sans)" }}
+          >
+            Includes:
+          </p>
+          <div className="flex flex-col gap-2">
+            {coreIncludes.map((item, index) => (
+              <FeatureItem key={index}>
+                {item.bold ? (
+                  <span className="font-semibold">{item.text}</span>
+                ) : (
+                  <>
+                    <span>{item.text}</span>
+                    <span className="font-semibold">{item.boldPart}</span>
+                  </>
+                )}
+              </FeatureItem>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function Plans() {
-  const [selectedTierIndex, setSelectedTierIndex] = useState(2); // Default to 250K
+  const [selectedTierIndex, setSelectedTierIndex] = useState(0); // Default to 50K
   const selectedTier = sessionTiers[selectedTierIndex];
-  const currentPricing = pricing[selectedTier.value];
+  const isContactSales = selectedTier.value === -1;
+  const currentPricing = isContactSales ? null : pricing[selectedTier.value];
   const sliderRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
 
@@ -369,14 +399,6 @@ export function Plans() {
     isDragging.current = false;
   };
 
-  // Auto-advance slider every 10 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setSelectedTierIndex((prev) => (prev + 1) % sessionTiers.length);
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <section className="relative bg-[#f9f8ff]">
@@ -511,14 +533,14 @@ export function Plans() {
           <div className="w-full max-w-[856px]">
             {/* Mobile: Advanced first, then Core */}
             <div className="flex flex-col xl:hidden gap-6">
-              <AdvancedCard currentPricing={currentPricing.advanced} />
-              <CoreCard currentPricing={currentPricing.core} />
+              <AdvancedCard currentPricing={currentPricing?.advanced ?? null} isContactSales={isContactSales} />
+              <CoreCard currentPricing={currentPricing?.core ?? null} isContactSales={isContactSales} />
             </div>
 
-            {/* Desktop: Core first, then Advanced */}
-            <div className="hidden xl:flex gap-6">
-              <CoreCard currentPricing={currentPricing.core} />
-              <AdvancedCard currentPricing={currentPricing.advanced} />
+            {/* Desktop: Core first, then Advanced - using grid for equal row heights */}
+            <div className="hidden xl:grid grid-cols-2 gap-6" style={{ gridTemplateRows: 'auto auto 1fr' }}>
+              <CoreCard currentPricing={currentPricing?.core ?? null} isContactSales={isContactSales} />
+              <AdvancedCard currentPricing={currentPricing?.advanced ?? null} isContactSales={isContactSales} />
             </div>
           </div>
         </div>
