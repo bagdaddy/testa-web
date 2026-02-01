@@ -538,7 +538,7 @@ export function Plans() {
             </div>
 
             {/* Desktop: Core first, then Advanced - using grid for equal row heights */}
-            <div className="hidden xl:grid grid-cols-2 gap-6" style={{ gridTemplateRows: 'auto auto 1fr' }}>
+            <div className="hidden xl:grid grid-cols-2 gap-x-6 gap-y-0" style={{ gridTemplateRows: 'auto auto 1fr' }}>
               <CoreCard currentPricing={currentPricing?.core ?? null} isContactSales={isContactSales} />
               <AdvancedCard currentPricing={currentPricing?.advanced ?? null} isContactSales={isContactSales} />
             </div>

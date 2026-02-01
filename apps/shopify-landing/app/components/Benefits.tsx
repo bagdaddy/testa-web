@@ -165,8 +165,8 @@ function StatCard({
 }
 
 // Desktop: how much scroll distance maps to 100% progress
-// Each scroll tick (~100px) = ~0.5% progress, so 100% = 20000px
-const SCROLL_DISTANCE = 20000;
+// Lower value = faster progress
+const SCROLL_DISTANCE = 7500;
 
 export function Benefits() {
   const [selectedIndex, setSelectedIndex] = useState(0);
