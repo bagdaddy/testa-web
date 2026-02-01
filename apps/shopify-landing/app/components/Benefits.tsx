@@ -84,26 +84,21 @@ function BenefitItem({
   description,
   isSelected,
   progress,
-  onClick,
 }: {
   title: string;
   description: string;
   isSelected: boolean;
   progress: number; // 0-100 for this item's fill level
-  onClick: () => void;
 }) {
   return (
-    <button
-      onClick={onClick}
-      className="flex flex-col gap-1 w-full text-left cursor-pointer hover:opacity-90 transition-opacity"
-    >
+    <div className="flex flex-col w-full">
       {/* Title row with vertically centered indicator */}
       <div className="flex gap-4 items-center">
         {/* Vertical indicator bar with progress fill */}
         <div className="relative w-2 h-[45px] rounded-full overflow-hidden shrink-0">
           <div className="absolute inset-0 bg-[#2f2c46]" />
           <div
-            className="absolute top-0 left-0 w-full bg-[#f9f8ff] rounded-full transition-all duration-100"
+            className="absolute top-0 left-0 w-full bg-[#f9f8ff] rounded-full"
             style={{ height: `${progress}%` }}
           />
         </div>
@@ -111,13 +106,21 @@ function BenefitItem({
           {title}
         </p>
       </div>
-      {/* Description - only shown when selected, indented to align with title */}
-      {isSelected && (
-        <p className="text-[14px] text-[#f9f8ff] leading-[20px] font-normal pl-6 min-h-[40px]">
-          {description}
-        </p>
-      )}
-    </button>
+      {/* Description - grid for smooth height animation */}
+      <div
+        className="grid pl-6 transition-[grid-template-rows,opacity] duration-200 ease-linear"
+        style={{
+          gridTemplateRows: isSelected ? "1fr" : "0fr",
+          opacity: isSelected ? 1 : 0,
+        }}
+      >
+        <div className="overflow-hidden">
+          <p className="text-[14px] text-[#f9f8ff] leading-[20px] font-normal pt-1 pb-2">
+            {description}
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -162,7 +165,8 @@ function StatCard({
 }
 
 // Desktop: how much scroll distance maps to 100% progress
-const SCROLL_DISTANCE = 2000;
+// Each scroll tick (~100px) = ~0.5% progress, so 100% = 20000px
+const SCROLL_DISTANCE = 20000;
 
 export function Benefits() {
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -242,14 +246,6 @@ export function Benefits() {
     carousel.scrollTo({ left: slideWidth * index, behavior: "smooth" });
   };
 
-  // Handle click on desktop benefit item
-  const handleBenefitClick = (index: number) => {
-    if (typeof window !== "undefined" && window.innerWidth < 1280) return;
-
-    const progressPerItem = 100 / benefits.length;
-    const targetProgress = index * progressPerItem + progressPerItem / 2;
-    setScrollProgress(targetProgress);
-  };
 
   return (
     <section
@@ -316,7 +312,6 @@ export function Benefits() {
                         description={benefit.description}
                         isSelected={selectedIndex === index}
                         progress={getItemProgress(index)}
-                        onClick={() => handleBenefitClick(index)}
                       />
                     ))}
                   </div>
