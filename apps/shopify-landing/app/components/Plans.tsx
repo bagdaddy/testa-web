@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 
 // Session tiers with placeholder prices (to be filled in later)
 const sessionTiers = [
@@ -167,7 +167,10 @@ function CoreCard({
 
           {/* Buttons */}
           <div className="flex flex-col gap-4">
-            <button className="w-full h-[56px] bg-[#110b36] text-[#f9f8ff] font-bold text-[20px] rounded-full hover:bg-[#1a1250] transition-colors">
+            <button
+              onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+              className="w-full h-[56px] bg-[#110b36] text-[#f9f8ff] font-bold text-[20px] rounded-full hover:bg-[#1a1250] transition-colors"
+            >
               Contact Us
             </button>
             <div className="flex flex-col gap-4 items-center">
@@ -259,7 +262,10 @@ function AdvancedCard({
 
           {/* Buttons */}
           <div className="flex flex-col gap-4">
-            <button className="w-full h-[56px] bg-[#110b36] text-[#f9f8ff] font-bold text-[20px] rounded-full hover:bg-[#1a1250] transition-colors">
+            <button
+              onClick={() => document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" })}
+              className="w-full h-[56px] bg-[#110b36] text-[#f9f8ff] font-bold text-[20px] rounded-full hover:bg-[#1a1250] transition-colors"
+            >
               Contact Us
             </button>
             <div className="flex flex-col gap-4 items-center">
@@ -362,6 +368,15 @@ export function Plans() {
   const handleTouchEnd = () => {
     isDragging.current = false;
   };
+
+  // Auto-advance slider every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSelectedTierIndex((prev) => (prev + 1) % sessionTiers.length);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <section className="relative bg-[#f9f8ff]">

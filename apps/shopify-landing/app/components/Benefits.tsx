@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 // Benefits list data
 const benefits = [
@@ -83,11 +83,13 @@ function BenefitItem({
   title,
   description,
   isSelected,
+  progress,
   onClick,
 }: {
   title: string;
   description: string;
   isSelected: boolean;
+  progress: number; // 0-100 for this item's fill level
   onClick: () => void;
 }) {
   return (
@@ -97,12 +99,13 @@ function BenefitItem({
     >
       {/* Title row with vertically centered indicator */}
       <div className="flex gap-4 items-center">
-        {/* Vertical indicator bar */}
+        {/* Vertical indicator bar with progress fill */}
         <div className="relative w-2 h-[45px] rounded-full overflow-hidden shrink-0">
           <div className="absolute inset-0 bg-[#2f2c46]" />
-          {isSelected && (
-            <div className="absolute top-0 left-0 w-full h-[25px] bg-[#f9f8ff] rounded-full" />
-          )}
+          <div
+            className="absolute top-0 left-0 w-full bg-[#f9f8ff] rounded-full transition-all duration-100"
+            style={{ height: `${progress}%` }}
+          />
         </div>
         <p className="font-bold text-[20px] text-[#f9f8ff] leading-normal">
           {title}
@@ -158,12 +161,64 @@ function StatCard({
   );
 }
 
+// Desktop: how much scroll distance maps to 100% progress
+const SCROLL_DISTANCE = 2000;
+
 export function Benefits() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [scrollProgress, setScrollProgress] = useState(0); // 0 to 100
   const carouselRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
 
-  // Track scroll position to update current slide indicator
+  // Calculate progress for each item (0-100)
+  const getItemProgress = useCallback((index: number) => {
+    const progressPerItem = 100 / benefits.length;
+    const itemStart = index * progressPerItem;
+    const itemEnd = (index + 1) * progressPerItem;
+
+    if (scrollProgress <= itemStart) return 0;
+    if (scrollProgress >= itemEnd) return 100;
+    return ((scrollProgress - itemStart) / progressPerItem) * 100;
+  }, [scrollProgress]);
+
+  // Calculate which item is currently selected based on progress
+  useEffect(() => {
+    const progressPerItem = 100 / benefits.length;
+    const newIndex = Math.min(
+      Math.floor(scrollProgress / progressPerItem),
+      benefits.length - 1
+    );
+    setSelectedIndex(newIndex);
+  }, [scrollProgress]);
+
+  // Desktop: track scroll position within the tall section
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleScroll = () => {
+      if (window.innerWidth < 1280) return;
+
+      const section = sectionRef.current;
+      if (!section) return;
+
+      const rect = section.getBoundingClientRect();
+      const stickyOffset = 80; // matches the sticky top value
+
+      // Progress starts when section top reaches the sticky offset point
+      // and ends when we've scrolled SCROLL_DISTANCE pixels
+      const scrolledIntoSection = -rect.top + stickyOffset;
+      const progress = Math.max(0, Math.min(100, (scrolledIntoSection / SCROLL_DISTANCE) * 100));
+
+      setScrollProgress(progress);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll(); // Initial calculation
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Track scroll position to update current slide indicator (mobile)
   useEffect(() => {
     const carousel = carouselRef.current;
     if (!carousel) return;
@@ -187,165 +242,205 @@ export function Benefits() {
     carousel.scrollTo({ left: slideWidth * index, behavior: "smooth" });
   };
 
+  // Handle click on desktop benefit item
+  const handleBenefitClick = (index: number) => {
+    if (typeof window !== "undefined" && window.innerWidth < 1280) return;
+
+    const progressPerItem = 100 / benefits.length;
+    const targetProgress = index * progressPerItem + progressPerItem / 2;
+    setScrollProgress(targetProgress);
+  };
+
   return (
-    <section className="relative bg-[#f9f8ff] xl:px-5 pt-12 pb-[40px] xl:py-[48px]">
-      <div className="max-w-[1440px] mx-auto">
-        {/* Main dark container */}
-        <div className="relative xl:pb-[70px]">
-          {/* Desktop version - shown at xl (1280px) and above */}
+    <section
+      ref={sectionRef}
+      className="relative bg-[#f9f8ff]"
+    >
+      {/* ========== DESKTOP VERSION ========== */}
+      <div className="hidden xl:block px-5">
+        <div className="max-w-[1440px] mx-auto pt-[48px]">
+          {/* Wrapper that creates the scroll distance */}
           <div
-            className="hidden xl:block relative rounded-[20px] overflow-hidden px-[140px] py-[96px] bg-[#120c37]"
+            className="relative pb-[30px]"
+            style={{ height: `${SCROLL_DISTANCE + 730}px` }}
           >
-            {/* Gradient blob - top right corner */}
+            {/* Dark background - absolute positioned, rounds corners with clip */}
             <div
-              className="absolute top-0 right-0 w-[500px] h-[500px] pointer-events-none opacity-25"
-              style={{
-                background: "radial-gradient(circle at top right, rgba(145, 153, 255, 1) 0%, transparent 60%)",
-              }}
-            />
-
-            {/* Gradient blob - left side, centered vertically */}
-            <div
-              className="absolute top-1/2 -translate-y-1/2 left-[-150px] w-[350px] h-[350px] pointer-events-none blur-[100px]"
-              style={{
-                background: "rgba(145, 153, 255, 0.2)",
-              }}
-            />
-
-            {/* Content */}
-            <div className="relative z-10 flex flex-col gap-10 pb-10">
-              {/* Title */}
-              <h2 className="text-[44px] font-semibold text-[#f9f8ff] text-center leading-[50px] max-w-[1032px] mx-auto">
-                With{" "}
-                <em className="font-normal" style={{ fontStyle: "italic" }}>
-                  AB Testing Tool
-                </em>{" "}
-                you will
-              </h2>
-
-              {/* Desktop: Two columns layout */}
-              <div className="flex gap-6 items-start">
-                {/* Left: Slide image */}
-                <img
-                  src={benefits[selectedIndex].image}
-                  alt={benefits[selectedIndex].title}
-                  className="w-[592px] h-[426px] object-contain shrink-0 rounded-[16px]"
-                />
-
-                {/* Right: Benefits list */}
-                <div className="flex flex-col gap-5 w-[416px]">
-                  {benefits.map((benefit, index) => (
-                    <BenefitItem
-                      key={index}
-                      title={benefit.title}
-                      description={benefit.description}
-                      isSelected={selectedIndex === index}
-                      onClick={() => setSelectedIndex(index)}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile version - shown below xl (1280px) */}
-          <div
-            className="xl:hidden relative overflow-hidden pt-[48px] pb-[80px] mb-[-40px] rounded-[24px] md:rounded-none"
-            style={{
-              background:
-                "linear-gradient(-30deg, rgb(18, 12, 55) 50%, rgb(60, 65, 120) 100%)",
-            }}
-          >
-            {/* Content */}
-            <div className="relative z-10 flex flex-col gap-8 px-4">
-              {/* Title */}
-              <h2
-                className="text-[32px] font-bold text-[#f9f8ff] leading-[40px]"
-                style={{ fontFamily: "var(--font-dm-sans)" }}
-              >
-                With{" "}
-                <em className="font-normal" style={{ fontStyle: "italic" }}>
-                  AB Testing Tool
-                </em>{" "}
-                you will
-              </h2>
-
-              {/* Scroll carousel */}
+              className="absolute inset-0 bg-[#120c37] rounded-[20px]"
+              style={{ clipPath: "inset(0 round 20px)" }}
+            >
+              {/* Gradient blob - top right corner */}
               <div
-                ref={carouselRef}
-                className="flex overflow-x-auto snap-x snap-mandatory -mx-4"
+                className="absolute top-0 right-0 w-[500px] h-[500px] pointer-events-none opacity-25"
                 style={{
-                  scrollbarWidth: "none",
-                  msOverflowStyle: "none",
-                  WebkitOverflowScrolling: "touch",
-                  scrollSnapStop: "always",
+                  background: "radial-gradient(circle at top right, rgba(145, 153, 255, 1) 0%, transparent 60%)",
                 }}
-              >
-                {benefits.map((benefit, index) => (
-                  <div
-                    key={index}
-                    className="snap-start snap-always flex-shrink-0 flex flex-col gap-6 w-full px-4"
-                  >
-                    {/* Benefit text content */}
-                    <div className="flex flex-col gap-4">
-                      <p
-                        className="text-[24px] text-[#f9f8ff] leading-[32px]"
-                        style={{
-                          fontFamily: "var(--font-lexend)",
-                          fontWeight: 400,
-                        }}
-                      >
-                        {benefit.title}
-                      </p>
-                      <p
-                        className="text-[16px] text-[#f9f8ff] leading-[24px]"
-                        style={{
-                          fontFamily: "var(--font-lexend)",
-                          fontWeight: 300,
-                        }}
-                      >
-                        {benefit.description}
-                      </p>
-                    </div>
+              />
 
-                    {/* Benefit image - no wrapper */}
-                    <img
-                      src={benefit.image}
-                      alt={benefit.title}
-                      className="w-full rounded-[8px]"
-                      style={{ aspectRatio: "344 / 247" }}
-                    />
+              {/* Gradient blob - left side */}
+              <div
+                className="absolute top-[300px] left-[-150px] w-[350px] h-[350px] pointer-events-none blur-[100px]"
+                style={{
+                  background: "rgba(145, 153, 255, 0.2)",
+                }}
+              />
+            </div>
+
+            {/* Sticky content - stays in view while scrolling */}
+            <div className="sticky top-[60px] px-[140px] py-[96px] z-10">
+              <div className="flex flex-col gap-10">
+                {/* Title */}
+                <h2 className="text-[44px] font-semibold text-[#f9f8ff] text-center leading-[50px] max-w-[1032px] mx-auto">
+                  With{" "}
+                  <em className="font-normal" style={{ fontStyle: "italic" }}>
+                    AB Testing Tool
+                  </em>{" "}
+                  you will
+                </h2>
+
+                {/* Two columns layout */}
+                <div className="flex gap-6 items-start">
+                  {/* Left: Slide image */}
+                  <img
+                    src={benefits[selectedIndex].image}
+                    alt={benefits[selectedIndex].title}
+                    className="w-[592px] h-[426px] object-contain shrink-0 rounded-[16px]"
+                  />
+
+                  {/* Right: Benefits list */}
+                  <div className="flex flex-col gap-5 w-[416px]">
+                    {benefits.map((benefit, index) => (
+                      <BenefitItem
+                        key={index}
+                        title={benefit.title}
+                        description={benefit.description}
+                        isSelected={selectedIndex === index}
+                        progress={getItemProgress(index)}
+                        onClick={() => handleBenefitClick(index)}
+                      />
+                    ))}
                   </div>
-                ))}
-              </div>
-
-              {/* Scroll indicator dots - clickable, centered */}
-              <div className="flex items-center justify-center w-full">
-                <div className="flex items-center justify-center gap-4 max-w-[420px]">
-                  {getIndicatorWidths(currentSlide, benefits.length).map((width, index) => (
-                    <button
-                      key={index}
-                      onClick={() => scrollToSlide(index)}
-                      className={`h-2 rounded-[100px] transition-all duration-300 flex-shrink-0 ${
-                        currentSlide === index
-                          ? "bg-white"
-                          : "bg-[rgba(255,255,255,0.2)]"
-                      }`}
-                      style={{ width: `${width}px` }}
-                    />
-                  ))}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Stats cards - overlapping the dark container */}
-          <div className="relative xl:-mt-[70px] flex justify-center">
-            <div className="bg-white p-4 rounded-[16px] w-[328px] xl:w-auto xl:p-5 xl:rounded-[10px] mb-[-40px] xl:mb-0">
-              <div className="flex flex-col items-center xl:flex-row gap-4 xl:gap-6">
+          {/* Stats cards - at the bottom, overlapping the dark container slightly */}
+          <div className="relative -mt-[70px] flex justify-center pb-[48px]">
+            <div className="bg-white p-5 rounded-[10px]">
+              <div className="flex flex-row gap-6">
                 {stats.map((stat, index) => (
                   <StatCard key={index} {...stat} />
                 ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ========== MOBILE VERSION ========== */}
+      <div className="xl:hidden pt-12 pb-[40px]">
+        <div className="max-w-[1440px] mx-auto">
+          <div className="relative">
+            {/* Mobile dark container */}
+            <div
+              className="relative overflow-hidden pt-[48px] pb-[80px] mb-[-40px] rounded-[24px] md:rounded-none"
+              style={{
+                background:
+                  "linear-gradient(-30deg, rgb(18, 12, 55) 50%, rgb(60, 65, 120) 100%)",
+              }}
+            >
+              {/* Content */}
+              <div className="relative z-10 flex flex-col gap-8 px-4">
+                {/* Title */}
+                <h2
+                  className="text-[32px] font-bold text-[#f9f8ff] leading-[40px]"
+                  style={{ fontFamily: "var(--font-dm-sans)" }}
+                >
+                  With{" "}
+                  <em className="font-normal" style={{ fontStyle: "italic" }}>
+                    AB Testing Tool
+                  </em>{" "}
+                  you will
+                </h2>
+
+                {/* Scroll carousel */}
+                <div
+                  ref={carouselRef}
+                  className="flex overflow-x-auto snap-x snap-mandatory -mx-4"
+                  style={{
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
+                    WebkitOverflowScrolling: "touch",
+                    scrollSnapStop: "always",
+                  }}
+                >
+                  {benefits.map((benefit, index) => (
+                    <div
+                      key={index}
+                      className="snap-start snap-always flex-shrink-0 flex flex-col gap-6 w-full px-4"
+                    >
+                      {/* Benefit text content */}
+                      <div className="flex flex-col gap-4">
+                        <p
+                          className="text-[24px] text-[#f9f8ff] leading-[32px]"
+                          style={{
+                            fontFamily: "var(--font-lexend)",
+                            fontWeight: 400,
+                          }}
+                        >
+                          {benefit.title}
+                        </p>
+                        <p
+                          className="text-[16px] text-[#f9f8ff] leading-[24px]"
+                          style={{
+                            fontFamily: "var(--font-lexend)",
+                            fontWeight: 300,
+                          }}
+                        >
+                          {benefit.description}
+                        </p>
+                      </div>
+
+                      {/* Benefit image */}
+                      <img
+                        src={benefit.image}
+                        alt={benefit.title}
+                        className="w-full rounded-[8px]"
+                        style={{ aspectRatio: "344 / 247" }}
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* Scroll indicator dots */}
+                <div className="flex items-center justify-center w-full">
+                  <div className="flex items-center justify-center gap-4 max-w-[420px]">
+                    {getIndicatorWidths(currentSlide, benefits.length).map((width, index) => (
+                      <button
+                        key={index}
+                        onClick={() => scrollToSlide(index)}
+                        className={`h-2 rounded-[100px] transition-all duration-300 flex-shrink-0 ${
+                          currentSlide === index
+                            ? "bg-white"
+                            : "bg-[rgba(255,255,255,0.2)]"
+                        }`}
+                        style={{ width: `${width}px` }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Stats cards */}
+            <div className="relative flex justify-center">
+              <div className="bg-white p-4 rounded-[16px] w-[328px] mb-[-40px]">
+                <div className="flex flex-col items-center gap-4">
+                  {stats.map((stat, index) => (
+                    <StatCard key={index} {...stat} />
+                  ))}
+                </div>
               </div>
             </div>
           </div>

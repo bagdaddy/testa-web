@@ -220,7 +220,7 @@ export function Contact() {
   };
 
   return (
-    <section className="bg-[#f9f8ff] px-5 py-12">
+    <section id="contact" className="bg-[#f9f8ff] px-5 py-12">
       <div
         className="max-w-[1400px] mx-auto rounded-[24px] px-6 py-12 xl:px-[180px] xl:py-[96px] overflow-hidden"
         style={{

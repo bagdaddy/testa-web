@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 // Testimonial data - Row 1 (3 cards for mobile, 4 for desktop)
 const row1Testimonials = [
@@ -87,7 +87,7 @@ function TestimonialCard({
 }) {
   return (
     <div
-      className="flex flex-col p-4 rounded-[16px] w-[344px] xl:w-[501px] h-[237px] xl:h-[216px] shrink-0"
+      className="flex flex-col p-4 rounded-[16px] w-[340px] xl:w-[501px] h-[237px] xl:h-[216px] shrink-0"
       style={{
         background: "linear-gradient(to bottom, #f2f6fd, #c7def9)",
       }}
@@ -135,35 +135,91 @@ const getIndicatorWidths = (activeIndex: number, totalSlides: number) => {
   return widths;
 };
 
+// Number of times to duplicate the slides for infinite scroll
+const TOTAL_SETS = 6;
+const SLIDES_PER_SET = 3;
+const MIDDLE_SET = Math.floor(TOTAL_SETS / 2); // Start in the middle
+
 export function Customers() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const totalMobileSlides = 3; // 3 slides on mobile
 
-  // Fixed slide width (card 344px + small gap 8px)
-  const mobileSlideWidth = 352;
+  // Fixed slide width (card 344px + gap 16px)
+  const mobileSlideWidth = 360;
+  const setWidth = mobileSlideWidth * SLIDES_PER_SET;
 
-  // Track scroll position to update current slide indicator
+  // Reset to middle set when near edges (called after scroll ends)
+  const resetToMiddle = useCallback(() => {
+    const carousel = carouselRef.current;
+    if (!carousel) return;
+
+    const scrollLeft = carousel.scrollLeft;
+    const currentSet = Math.floor(scrollLeft / setWidth);
+    const positionInSet = scrollLeft % setWidth;
+
+    // If we're in the first 2 sets or last 2 sets, jump to middle
+    if (currentSet < 2 || currentSet >= TOTAL_SETS - 2) {
+      carousel.scrollLeft = MIDDLE_SET * setWidth + positionInSet;
+    }
+  }, [setWidth]);
+
+  // Set initial scroll position to middle set
+  useEffect(() => {
+    const carousel = carouselRef.current;
+    if (!carousel) return;
+    carousel.scrollLeft = MIDDLE_SET * setWidth;
+  }, [setWidth]);
+
+  // Track scroll position and reset when scroll ends
   useEffect(() => {
     const carousel = carouselRef.current;
     if (!carousel) return;
 
     const handleScroll = () => {
       const scrollLeft = carousel.scrollLeft;
-      const newSlide = Math.round(scrollLeft / mobileSlideWidth);
+      // Use modulo to get position within a single set of 3 slides
+      const positionInSet = scrollLeft % setWidth;
+      const newSlide = Math.round(positionInSet / mobileSlideWidth);
       setCurrentSlide(Math.max(0, Math.min(newSlide, totalMobileSlides - 1)));
+
+      // Clear existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      // Reset to middle after scroll ends (150ms debounce)
+      scrollTimeoutRef.current = setTimeout(resetToMiddle, 150);
     };
 
     carousel.addEventListener("scroll", handleScroll, { passive: true });
-    return () => carousel.removeEventListener("scroll", handleScroll);
-  }, [mobileSlideWidth]);
+    return () => {
+      carousel.removeEventListener("scroll", handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, [mobileSlideWidth, setWidth, resetToMiddle]);
 
   // Scroll to slide when indicator is clicked
-  const scrollToSlide = (index: number) => {
+  const scrollToSlide = useCallback((index: number) => {
     const carousel = carouselRef.current;
     if (!carousel) return;
-    carousel.scrollTo({ left: mobileSlideWidth * index, behavior: "smooth" });
-  };
+    // Calculate which set we're currently in and scroll to the same set
+    const currentSet = Math.floor(carousel.scrollLeft / setWidth);
+    carousel.scrollTo({ left: mobileSlideWidth * (currentSet * SLIDES_PER_SET + index), behavior: "smooth" });
+  }, [setWidth, mobileSlideWidth]);
+
+  // Auto-advance every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const nextSlide = (currentSlide + 1) % totalMobileSlides;
+      scrollToSlide(nextSlide);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [currentSlide, scrollToSlide, totalMobileSlides]);
 
   return (
     <section className="relative bg-[#f9f8ff] pt-6 xl:pt-[80px] overflow-hidden">
@@ -207,28 +263,23 @@ export function Customers() {
             WebkitOverflowScrolling: "touch",
           }}
         >
-          {/* Each slide is a column with 2 cards stacked */}
-          {[0, 1, 2].map((slideIndex) => (
-            <div
-              key={slideIndex}
-              className="snap-start shrink-0 flex flex-col gap-4"
-              style={{ scrollSnapAlign: "start", width: "352px" }}
-            >
-              {/* Row 1 card */}
-              <TestimonialCard {...row1Testimonials[slideIndex]} />
-              {/* Row 2 card - offset to the right */}
-              <div style={{ marginLeft: "40px" }}>
-                <TestimonialCard {...row2Testimonials[slideIndex]} />
+          {/* Duplicate slides for seamless infinite scroll effect */}
+          {Array.from({ length: TOTAL_SETS }, (_, setIndex) => (
+            Array.from({ length: SLIDES_PER_SET }, (_, slideIndex) => (
+              <div
+                key={`${setIndex}-${slideIndex}`}
+                className="snap-start shrink-0 flex flex-col gap-4"
+                style={{ scrollSnapAlign: "start", width: "352px" }}
+              >
+                {/* Row 1 card */}
+                <TestimonialCard {...row1Testimonials[slideIndex]} />
+                {/* Row 2 card - offset to the right */}
+                <div style={{ marginLeft: "40px" }}>
+                  <TestimonialCard {...row2Testimonials[slideIndex]} />
+                </div>
               </div>
-            </div>
-          ))}
-          {/* Extra partial slide for endless feel */}
-          <div className="shrink-0 flex flex-col gap-4" style={{ width: "352px" }}>
-            <TestimonialCard {...row1Testimonials[0]} />
-            <div style={{ marginLeft: "40px" }}>
-              <TestimonialCard {...row2Testimonials[0]} />
-            </div>
-          </div>
+            ))
+          )).flat()}
         </div>
 
         {/* Scroll indicators */}
